@@ -4,7 +4,7 @@
 
 
 
-![BiasLens Screenshot](ss22.png)
+![BiasLens Screenshot](ss12.png)
 
 
 
