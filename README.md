@@ -42,4 +42,4 @@ The app allows users to explore male- and female-associated words, view detailed
 ## Usage
 1. Clone the repository:
 ```bash
-git clone https://github.com/<your-username>/BiasLens-SOC360-CSS.git
+git clone https://github.com/pvparekh/BiasLens-SOC360-CSS.git
