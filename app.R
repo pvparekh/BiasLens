@@ -308,7 +308,7 @@ ui <- fluidPage(
              tabPanel("About",
                       br(),
                       div(class = "card",
-                          h4("Methodology"),
+                        
                           tags$p("This project (SOC360 — Computational Social Science, Rutgers) analyzes gendered language patterns in Wikipedia biography abstracts by identifying words disproportionately associated with men or women."),
                           tags$p("Biographies were preprocessed (cleaning, stopword removal, tokenization). For each word, overall counts and male/female occurrence ratios were computed to assess gender association."),
                           tags$p("The interactive tool supports filtering by frequency and dominance; users can explore male- and female-associated words via bar charts, inspect the full statistics table, and download filtered or top lists for further analysis."),
