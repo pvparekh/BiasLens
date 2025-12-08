@@ -101,7 +101,7 @@ ui <- fluidPage(
 
       .hero-card .subtle {
         color: rgba(255,255,255,0.95);
-        font-size: 15px;
+        font-size: 17.5px;
         margin: 0 0 14px 0;
         text-align: center;
       }
