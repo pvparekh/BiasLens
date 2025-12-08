@@ -129,7 +129,14 @@ ui <- fluidPage(
         transform: translate(20%, 6%);
       }
 
-      .hero-stats-wrap { position: relative; z-index: 2; display: inline-block; }
+      .hero-stats-wrap {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  justify-content: center;   /* centers horizontally */
+  margin-top: 10px;
+}
       .quick-stats {
         display: inline-flex;
         gap: 20px;
