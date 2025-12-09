@@ -12,7 +12,7 @@ gender_word_stats <- readRDS("gws.rds")
 top_male_words <- readRDS("tmw.rds")
 top_female_words <- readRDS("fmw.rds")
 
-# ---------- defensive checks ----------
+# ---------- defensive check ----------
 if (!"word" %in% colnames(gender_word_stats)) stop("gws.rds must contain a 'word' column")
 if (!all(c("count","male_count","female_count","male_ratio","female_ratio") %in% colnames(gender_word_stats))) {
   stop("gws.rds must contain count,male_count,female_count,male_ratio,female_ratio columns")
@@ -287,7 +287,7 @@ ui <- fluidPage(
            div(class = "sidebar",
                div(class = "sidebar-title", "Filters & Controls"),
                sliderInput("min_count", "Minimum word frequency",
-                           min = 100, max = max(2000, na.rm = TRUE),
+                           min = 20, max = max(2000, na.rm = TRUE),
                            value = 100, step = 10, width = "100%"),
                numericInput("top_n", "Top words to show per chart",
                             value = 25, min = 5, max = 100, step = 5, width = "100%"),
@@ -296,7 +296,7 @@ ui <- fluidPage(
                conditionalPanel(
                  condition = "input.use_ratio_cut == true",
                  sliderInput("min_ratio", "Minimum dominant ratio",
-                             min = 0.5, max = 1, value = 0.7, step = 0.01, width = "100%")
+                             min = 0.4, max = 1, value = 0.5, step = 0.01, width = "100%")
                ),
                hr(),
                h5("Export / Downloads"),
@@ -308,7 +308,7 @@ ui <- fluidPage(
     
     column(10, class = "main-panel",
            tabsetPanel(
-             # ---------- DEFAULT: WORD CLOUD ----------
+             # ---------- WORD CLOUD ----------
              tabPanel("Word Cloud",
                       br(),
                       div(class = "card",
@@ -587,10 +587,19 @@ server <- function(input, output, session) {
   
   output$rawTable <- renderDT({
     people_df %>%
+      sample_n(size = min(10, n())) %>%   # at most 10 bios
       select(name, abstract, has_male, has_female, url) %>%
-      datatable(rownames = FALSE,
-                options = list(pageLength = 10, autoWidth = TRUE, scrollX = TRUE))
+      datatable(
+        rownames = FALSE,
+        options = list(
+          pageLength = 10,
+          autoWidth  = TRUE,
+          scrollX    = TRUE,
+          dom        = "tp"   # just table + pagination, no heavy controls
+        )
+      )
   }, server = TRUE)
+  
   
   output$download_filtered <- downloadHandler(
     filename = function() paste0("gender_word_stats_filtered_", Sys.Date(), ".csv"),
