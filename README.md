@@ -70,16 +70,5 @@ Association is primarily shown using document based ratios, while TF IDF helps i
 
 ---
 
-## Project Structure
-
-├── app.R # Shiny application (UI + server)
-├── preprocess.R # Preprocessing pipeline that generates RDS files
-├── people_0.ndjson # Input dataset (NDJSON)
-├── pds.rds # Processed biographies used by the app
-├── gws.rds # Word level gender stats used by the app
-├── tmw.rds # Top male associated word list
-├── fmw.rds # Top female associated word list
-└── www/
-└── lens.png # Logo used in the U
 
 
