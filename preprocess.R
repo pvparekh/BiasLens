@@ -9,10 +9,10 @@ library(stringr)
 # PARAMETERS
 # ---------------------------------------------------------
 path <- "people_0.ndjson"
-subset_lines <- 250000   # bump this later (e.g., 30000+)
+subset_lines <- 250000   
 
 # ---------------------------------------------------------
-# READ NDJSON (subset)
+# READ NDJSON 
 # ---------------------------------------------------------
 con <- file(path, "r")
 lines <- readLines(con, n = subset_lines)
@@ -38,7 +38,7 @@ people_df <- map_dfr(lines, parse_safe) %>%
   )
 
 # ---------------------------------------------------------
-# PRONOUN COUNTS + MAJORITY RULE (+ has_male / has_female)
+# PRONOUN COUNTS + MAJORITY RULE
 # ---------------------------------------------------------
 count_occ <- function(text, pattern) {
   str_count(text, regex(pattern, ignore_case = TRUE))
@@ -59,12 +59,12 @@ people_df <- people_df %>%
   filter(!is.na(gender_flag))   # drop ambiguous biographies
 
 # ---------------------------------------------------------
-# BALANCE MALE / FEMALE BIOS (For cleaner distribution)
+# BALANCE MALE / FEMALE BIOS (cleaner distribution)
 # ---------------------------------------------------------
 gender_counts <- people_df %>%
   count(gender_flag, name = "n")
 
-print(gender_counts)  # see how balanced the raw data is
+print(gender_counts)  # see how balanced raw data is
 
 n_min <- min(gender_counts$n)
 
@@ -85,7 +85,7 @@ tokens <- people_df %>%
   anti_join(stop_words, by = "word")
 
 # ---------------------------------------------------------
-# REMOVE FIRST NAMES (proffessor suggestion)
+# REMOVE FIRST NAMES 
 # any first name that appears >= 5 times as first token
 # ---------------------------------------------------------
 first_name_counts <- people_df %>%

@@ -1,6 +1,7 @@
 library(shiny)
 library(shinythemes)
 library(shinyWidgets)
+library(shinyjs)
 library(tidyverse)
 library(plotly)
 library(DT)
@@ -21,6 +22,7 @@ if (!all(c("count","male_count","female_count","male_ratio","female_ratio") %in%
 # ---------- UI ----------
 ui <- fluidPage(
   theme = shinytheme("flatly"),
+  shinyjs::useShinyjs(),
   
   tags$head(
     tags$title("BiasLens — Gender & Language Bias"),
@@ -31,26 +33,26 @@ ui <- fluidPage(
 
       /* --- TITLE + LOGO ROW --- */
       .title-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;   /* centers the pair together */
-    gap: 10px;
-    margin-bottom: 6px;
-  }
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
 
-  .big-title {
-    text-align: left !important;   /* prevents forcing layout downward */
-    margin: 0;
-    padding: 0;
-  }
+      .big-title {
+        text-align: left !important;
+        margin: 0;
+        padding: 0;
+      }
 
-  .lens-logo {
-    height: 42px;       /* sweet spot size */
-    width: auto;
-    opacity: 0.95;
-    margin-top: 8px;    /* perfect vertical alignment */
-  }
+      .lens-logo {
+        height: 42px;
+        width: auto;
+        opacity: 0.95;
+        margin-top: 8px;
+      }
 
       .card {
         background: linear-gradient(135deg, #ffffff, #e9f0f7);
@@ -130,13 +132,13 @@ ui <- fluidPage(
       }
 
       .hero-stats-wrap {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  display: flex;
-  justify-content: center;   /* centers horizontally */
-  margin-top: 10px;
-}
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+      }
       .quick-stats {
         display: inline-flex;
         gap: 20px;
@@ -216,7 +218,7 @@ ui <- fluidPage(
         .hero-card .big-title { font-size: 26px; }
         .sidebar { margin-bottom: 10px; }
       }
-"))
+    "))
   ),
   
   # ---------- Header ----------
@@ -226,11 +228,9 @@ ui <- fluidPage(
       div(
         class = "hero-card card",
         
-        # background accents
         div(class = "hero-decor-left"),
         div(class = "hero-decor-right"),
         
-        # refresh button
         actionBttn(
           inputId = "refresh",
           label = NULL,
@@ -241,17 +241,15 @@ ui <- fluidPage(
           class = "refresh-btn"
         ),
         
-        # TITLE ROW (title + lens icon)
         div(
           class = "title-row",
           h1(
             HTML(
               '<span class="big-title">
-       <span class="bias-blue">Bias</span><span class="lens-white">Lens</span>
-     </span>'
+                 <span class="bias-blue">Bias</span><span class="lens-white">Lens</span>
+               </span>'
             )
           ),
-          
           tags$img(src = "lens.png", class = "lens-logo")
         ),
         
@@ -280,7 +278,6 @@ ui <- fluidPage(
     )
   ),
   
-  
   # ---------- Main body ----------
   fluidRow(
     column(2,
@@ -288,9 +285,9 @@ ui <- fluidPage(
                div(class = "sidebar-title", "Filters & Controls"),
                sliderInput("min_count", "Minimum word frequency",
                            min = 20, max = max(2000, na.rm = TRUE),
-                           value = 100, step = 10, width = "100%"),
+                           value = 120, step = 10, width = "100%"),
                numericInput("top_n", "Top words to show per chart",
-                            value = 25, min = 5, max = 100, step = 5, width = "100%"),
+                            value = 32, min = 5, max = 100, step = 5, width = "100%"),
                checkboxInput("dominance_only", "Show only gender-dominant words", value = TRUE),
                checkboxInput("use_ratio_cut", "Require ratio >= (dominance threshold)", value = TRUE),
                conditionalPanel(
@@ -308,14 +305,13 @@ ui <- fluidPage(
     
     column(10, class = "main-panel",
            tabsetPanel(
-             # ---------- WORD CLOUD ----------
+             id = "main_tabs",
              tabPanel("Word Cloud",
                       br(),
                       div(class = "card",
                           h4("Word cloud of gendered terms"),
                           p(class = "small-note",
                             "Size reflects word frequency; blue = male-associated, pink = female-associated."),
-                          
                           div(
                             style = "width:100%; display:flex; justify-content:center; align-items:center;",
                             div(
@@ -363,7 +359,7 @@ ui <- fluidPage(
                       div(class = "card",
                           h4("Distribution of gender association"),
                           p(class = "small-note",
-                            "Values > 0 indicate male-associated words; values < 0 indicate female-associated words."),
+                            "Histogram of (male_ratio - female_ratio). Center is neutral; extremes indicate stronger association."),
                           plotlyOutput("ratioPlot", height = "420px")
                       )
              ),
@@ -372,7 +368,6 @@ ui <- fluidPage(
                       br(),
                       div(class = "card",
                           h4("Full word statistics"),
-                          # increased height so card background covers list nicely
                           DTOutput("wordTable", height = "815px")
                       )
              ),
@@ -394,7 +389,6 @@ ui <- fluidPage(
                           tags$p("Biographies are first preprocessed by counting male and female pronouns and assigning a gender label using a simple majority rule. The text is then cleaned, tokenized, stripped of stopwords, and frequent first names from the biography titles are removed."),
                           tags$p("For each remaining word, I count how many distinct male and female biographies it appears in and compute TF–IDF scores per word–biography pair. A word’s gender association is defined using the share of its total TF–IDF that comes from male versus female biographies."),
                           tags$p("This interactive tool lets users filter words by frequency and dominance and explore male- and female-associated terms via bar charts and a word cloud, and inspect or download the summary statistics for further analysis"),
-                          
                           tags$p("This project draws inspiration from:"),
                           tags$p(tags$em("Bolukbasi, T., Chang, K.-W., Zou, J., Saligrama, V., & Kalai, A. (2016)."),
                                  " Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings. Proceedings of NeurIPS 2016."),
@@ -408,6 +402,21 @@ ui <- fluidPage(
 
 # ---------- SERVER ----------
 server <- function(input, output, session) {
+  
+  observeEvent(input$main_tabs, {
+    is_wc <- identical(input$main_tabs, "Word Cloud")
+    
+    if (is_wc) {
+      shinyjs::disable("dominance_only")
+      shinyjs::disable("use_ratio_cut")
+      shinyjs::disable("min_ratio")
+    } else {
+      shinyjs::enable("dominance_only")
+      shinyjs::enable("use_ratio_cut")
+      shinyjs::enable("min_ratio")
+    }
+  }, ignoreInit = TRUE)
+  
   observeEvent(input$refresh, {
     shiny::invalidateLater(1000, session)
     try({
@@ -457,8 +466,7 @@ server <- function(input, output, session) {
   
   # ---------- WORD CLOUD ----------
   output$wordCloud <- renderWordcloud2({
-    df <- gender_word_stats %>%
-      filter(count >= input$min_count)
+    df <- gender_word_stats %>% filter(count >= input$min_count)
     if (nrow(df) == 0) return(NULL)
     
     total_n <- min(input$top_n, nrow(df))
@@ -493,7 +501,7 @@ server <- function(input, output, session) {
     
     wordcloud2(
       data = wc_data,
-      size = 1.8,                     # bigger words
+      size = 1.8,
       color = cols,
       backgroundColor = "transparent",
       shape = "circle",
@@ -501,31 +509,49 @@ server <- function(input, output, session) {
     )
   })
   
-  # ---------- RATIO DISTRIBUTION ----------
+  # ---------- RATIO DISTRIBUTION (CONTINUOUS COLOR; GREY IN THE MIDDLE) ----------
   output$ratioPlot <- renderPlotly({
     df <- filtered_stats()
     if (nrow(df) == 0) {
       return(ggplotly(ggplot() + geom_blank() + labs(title = "No data for current filters")))
     }
     
-    df <- df %>%
-      mutate(
-        diff = male_ratio - female_ratio,
-        dominant = case_when(
-          diff > 0 ~ "Male-associated",
-          diff < 0 ~ "Female-associated",
-          TRUE ~ "Balanced"
-        )
-      )
+    diffs <- df$male_ratio - df$female_ratio
+    diffs <- diffs[is.finite(diffs)]
     
-    p <- ggplot(df, aes(x = diff, fill = dominant)) +
-      geom_histogram(bins = 40, alpha = 0.85) +
-      labs(x = "male_ratio - female_ratio", y = "Number of words") +
-      scale_fill_manual(values = c(
-        "Male-associated" = "#4A90E2",
-        "Female-associated" = "#FF6FB7",
-        "Balanced" = "#9ca3af"
-      ))
+    if (length(diffs) == 0) {
+      return(ggplotly(ggplot() + geom_blank() + labs(title = "No finite values to plot")))
+    }
+    
+    bins <- 45
+    h <- hist(diffs, breaks = bins, plot = FALSE)
+    
+    binned <- tibble(
+      bin_left  = h$breaks[-length(h$breaks)],
+      bin_right = h$breaks[-1],
+      bin_mid   = (bin_left + bin_right) / 2,
+      count     = h$counts
+    )
+    
+    p <- ggplot(binned, aes(x = bin_mid, y = count, fill = bin_mid)) +
+      geom_col(width = (binned$bin_right[1] - binned$bin_left[1]) * 0.98, alpha = 0.95) +
+      geom_vline(xintercept = 0, linetype = "dashed", color = "grey35") +
+      labs(
+        x = "male_ratio − female_ratio",
+        y = "Number of words",
+        fill = "Association"
+      ) +
+      scale_fill_gradient2(
+        low = "#FF6FB7",
+        mid = "#9ca3af",
+        high = "#4A90E2",
+        midpoint = 0,
+        limits = c(-1, 1),
+        oob = scales::squish,
+        breaks = c(-0.75, -0.5, 0, 0.5, 0.75),
+        labels = c("0.75 (Female)", "0.50 (Female)", "0 (Neutral)", "0.50 (Male)", "0.75 (Male)")
+      ) +
+      theme_minimal()
     
     ggplotly(p)
   })
@@ -537,9 +563,10 @@ server <- function(input, output, session) {
       return(ggplotly(ggplot() + geom_blank() + labs(title = "No male-dominant words")))
     }
     p <- ggplot(df, aes(x = word, y = male_ratio,
-                        text = paste0("word: ", word, "<br>count: ", count,
+                        text = paste0("word: ", word,
+                                      "<br>count: ", count,
                                       "<br>male_count: ", male_count,
-                                      "<br>male_ratio: ", round(male_ratio,3)))) +
+                                      "<br>male_ratio: ", round(male_ratio, 3)))) +
       geom_col(aes(fill = male_ratio), show.legend = FALSE) +
       coord_flip() +
       labs(x = NULL, y = "Male ratio") +
@@ -553,9 +580,10 @@ server <- function(input, output, session) {
       return(ggplotly(ggplot() + geom_blank() + labs(title = "No female-dominant words")))
     }
     p <- ggplot(df, aes(x = word, y = female_ratio,
-                        text = paste0("word: ", word, "<br>count: ", count,
+                        text = paste0("word: ", word,
+                                      "<br>count: ", count,
                                       "<br>female_count: ", female_count,
-                                      "<br>female_ratio: ", round(female_ratio,3)))) +
+                                      "<br>female_ratio: ", round(female_ratio, 3)))) +
       geom_col(aes(fill = female_ratio), show.legend = FALSE) +
       coord_flip() +
       labs(x = NULL, y = "Female ratio") +
@@ -565,31 +593,52 @@ server <- function(input, output, session) {
   
   output$topMaleTable <- renderDT({
     top_male_reactive() %>%
-      select(word, count, male_count, female_count, male_ratio, female_ratio) %>%
+      transmute(
+        word, count, male_count, female_count,
+        male_ratio = round(male_ratio, 3),
+        female_ratio = round(female_ratio, 3)
+      ) %>%
       datatable(rownames = FALSE, options = list(pageLength = 10, dom = "tp"))
   })
   
   output$topFemaleTable <- renderDT({
     top_female_reactive() %>%
-      select(word, count, male_count, female_count, male_ratio, female_ratio) %>%
+      transmute(
+        word, count, male_count, female_count,
+        male_ratio = round(male_ratio, 3),
+        female_ratio = round(female_ratio, 3)
+      ) %>%
       datatable(rownames = FALSE, options = list(pageLength = 10, dom = "tp"))
   })
   
   output$wordTable <- renderDT({
     df <- filtered_stats() %>%
-      arrange(desc(abs(male_ratio - female_ratio))) %>%
-      mutate(diff = male_ratio - female_ratio)
-    datatable(df, rownames = FALSE, extensions = c("Buttons","Scroller"),
-              options = list(dom = "Bfrtip",
-                             buttons = c("csv","excel","pageLength"),
-                             pageLength = 25,
-                             deferRender = TRUE,
-                             scrollY = 700))  # match taller widget
+      mutate(
+        diff = male_ratio - female_ratio,
+        male_ratio = round(male_ratio, 3),
+        female_ratio = round(female_ratio, 3),
+        diff = round(diff, 3)
+      ) %>%
+      mutate(
+        across(matches("tfidf", ignore.case = TRUE), ~ round(.x, 3))
+      ) %>%
+      arrange(desc(abs(diff)))
+    
+    datatable(df,
+              rownames = FALSE,
+              extensions = c("Buttons","Scroller"),
+              options = list(
+                dom = "Bfrtip",
+                buttons = c("csv","excel","pageLength"),
+                pageLength = 25,
+                deferRender = TRUE,
+                scrollY = 700
+              ))
   }, server = TRUE)
   
   output$rawTable <- renderDT({
     people_df %>%
-      sample_n(size = min(10, n())) %>%   # at most 10 bios
+      sample_n(size = min(10, nrow(people_df))) %>%
       select(name, abstract, has_male, has_female, url) %>%
       datatable(
         rownames = FALSE,
@@ -597,11 +646,10 @@ server <- function(input, output, session) {
           pageLength = 10,
           autoWidth  = TRUE,
           scrollX    = TRUE,
-          dom        = "tp"   # just table + pagination, no heavy controls
+          dom        = "tp"
         )
       )
   }, server = TRUE)
-  
   
   output$download_filtered <- downloadHandler(
     filename = function() paste0("gender_word_stats_filtered_", Sys.Date(), ".csv"),
@@ -617,12 +665,13 @@ server <- function(input, output, session) {
       readr::write_csv(top_male_reactive(), f1)
       readr::write_csv(top_female_reactive(), f2)
       oldwd <- setwd(tmpdir); on.exit(setwd(oldwd))
-      zip::zipr(zipfile = file, files = c("top_male.csv","top_female.csv"))
+      zip::zipr(zipfile = file, files = c("top_male.csv", "top_female.csv"))
     }
   )
 }
 
 # ---------- RUN APP ----------
 shinyApp(ui, server)
+
 
 

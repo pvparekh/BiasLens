@@ -1,0 +1,200 @@
+---
+title: "Project"
+author: "Parth Parekh"
+date: "2025-11-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#install.packages("plotly")
+library(tidyverse)
+library(jsonlite)
+library(ndjson)
+library(tidyr)
+library(readr)
+library(data.table)
+library(purrr)
+library(kableExtra)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(tidytext)
+
+
+
+#install.packages("kableExtra")
+
+
+#path <- "people_0.ndjson"
+small_path <- "people_small.ndjson"
+num_lines <- length(readLines(small_path))
+num_lines
+con <- file(small_path, "r")
+lines <- readLines(small_path, n = 25000)
+close(con)
+
+# Write them to a new file
+writeLines(lines, small_path)
+head(lines)
+parse_safe <- function(line) {
+  tryCatch({
+    data <- jsonlite::fromJSON(line)
+    tibble(
+      name = data$name %||% NA_character_,
+      abstract = data$abstract %||% NA_character_,
+      url = data$url %||% NA_character_
+    )
+  }, error = function(e) NULL)
+}
+
+people_sample_df <- map_dfr(lines, parse_safe)
+
+# Quick check
+dim(people_sample_df)
+head(people_sample_df)
+```
+
+```{r}
+# clean text columns 
+people_sample_df <- people_sample_df %>%
+  mutate(
+    name = str_squish(name),
+    abstract = str_squish(replace_na(abstract, "")),
+    url = str_squish(replace_na(url, ""))
+  )
+
+head(people_sample_df)
+```
+
+```{r}
+# basic descriptive statistics
+
+summary_df <- people_sample_df %>%
+  mutate(abstract_length = str_length(abstract)) %>%
+  summarise(
+    total_people = n(),
+    avg_abstract_length = mean(abstract_length, na.rm = TRUE),
+    max_abstract_length = max(abstract_length, na.rm = TRUE),
+    min_abstract_length = min(abstract_length, na.rm = TRUE)
+  )
+
+summary_df %>%
+  kable() %>% kable_styling(full_width = FALSE)
+
+
+people_sample_df %>%
+  summarise(
+    median_abstract_length = median(str_length(abstract), na.rm = TRUE),
+    sd_abstract_length = sd(str_length(abstract), na.rm = TRUE)
+  )
+```
+
+
+```{r}
+# quick ggplot / interactive plot with plotly
+p <- ggplot(people_sample_df, aes(x = str_length(abstract))) +
+  geom_histogram(fill = "steelblue", bins = 30) +
+  labs(
+    title = "Distribution of Wikipedia Abstract Lengths",
+    x = "Abstract Length (characters)",
+    y = "Count"
+  )
+ggplotly(p)
+
+```
+
+
+```{r}
+people_sample_df %>%
+  select(name, abstract, url) %>%
+  slice(1:10) %>%
+  kable() %>%
+  kable_styling(full_width = FALSE)
+```
+
+
+```{r}
+# extract gendered pronouns
+people_sample_df <- people_sample_df %>%
+  mutate(
+    has_male = str_detect(tolower(abstract), "\\bhe\\b|\\bhim\\b|\\bhis\\b"),
+    has_female = str_detect(tolower(abstract), "\\bshe\\b|\\bher\\b|\\bhers\\b")
+  )
+
+```
+
+
+
+
+```{r}
+# tokenize and extract candidate occupation/descriptive words
+people_sample_df <- people_sample_df %>%
+  mutate(row_id = row_number())
+library(tidytext)
+library(dplyr)
+
+tokens <- people_sample_df %>%
+  select(row_id, abstract) %>%
+  unnest_tokens(word, abstract) %>%
+  filter(str_detect(word, "^[a-z]+$")) %>%  # keep clean words
+  anti_join(stop_words, by = "word")
+
+tokens <- tokens %>%
+  left_join(
+    people_sample_df %>% select(row_id, has_male, has_female),
+    by = "row_id"
+  )
+
+
+```
+
+
+```{r}
+gender_word_stats <- tokens %>%
+  group_by(word) %>%
+  summarise(
+    count = n(),
+    male_count = sum(has_male, na.rm = TRUE),
+    female_count = sum(has_female, na.rm = TRUE),
+    male_ratio = male_count / count,
+    female_ratio = female_count / count
+  ) %>%
+  filter(count >= 20) %>%   # remove rare words
+  arrange(desc(abs(male_ratio - female_ratio)))
+
+
+head(gender_word_stats, 300)
+
+
+#Top male associated words
+gender_word_stats %>%
+  arrange(desc(male_ratio)) %>%
+  slice(1:20)
+
+
+#Top female associated words
+gender_word_stats %>%
+  arrange(desc(female_ratio)) %>%
+  slice(1:20)
+
+
+#see pronouns detected
+people_sample_df %>%
+  select(name, has_male, has_female) %>%
+  slice(1:20)
+
+```
+
+
+
+
+
